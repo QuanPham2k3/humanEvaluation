@@ -5,14 +5,7 @@ from auth import login_user, register_user, logout_user
 from mos_eval import show_mos_evaluation
 from pairwise import show_ab_evaluation
 from dashboard import show_results
-DEBUG_MODE = True  # Đặt thành False khi muốn tắt chế độ debug
 
-if DEBUG_MODE and "authenticated" not in st.session_state:
-    st.session_state.authenticated = True
-    st.session_state.user_id = 1  
-    st.session_state.username = "admin"
-    st.session_state.is_admin = True
-    st.session_state.page = "home"
 # Setup page config
 st.set_page_config(page_title="TTS Evaluation", page_icon="🔊", layout="wide")
 
