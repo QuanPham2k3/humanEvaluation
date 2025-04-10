@@ -1,12 +1,21 @@
 import streamlit as st
 import os
-from config import DB_PATH, AUDIO_DIR
+
 from auth import login_user, register_user, logout_user
 from mos_eval import show_mos_evaluation
 from pairwise import show_ab_evaluation
 from dashboard import show_results
-
+from config import DB_URL 
 # Setup page config
+
+# DEBUG_MODE = True  #  False if not debug
+
+# if DEBUG_MODE and "authenticated" not in st.session_state:
+#     st.session_state.authenticated = True
+#     st.session_state.user_id = 1  
+#     st.session_state.username = "admin"
+#     st.session_state.is_admin = True
+#     st.session_state.page = "home"
 st.set_page_config(page_title="TTS Evaluation", page_icon="🔊", layout="wide")
 
 # Initialize session state
@@ -29,17 +38,17 @@ def show_login():
             if not username or not password:
                 st.error("Please enter all required information")
             else:
-                success, message = login_user(DB_PATH, username, password)
+                success, message = login_user(DB_URL, username, password)
                 if success:
                     st.success(message)
                     st.session_state.page = "home"
-                    st.experimental_rerun()
+                    st.rerun()
                 else:
                     st.error(message)
     
     if st.button("Register an account"):
         st.session_state.page = "register"
-        st.experimental_rerun()
+        st.rerun()
 
 def show_register():
     st.title("Register Account")
@@ -58,17 +67,17 @@ def show_register():
             elif password != confirm:
                 st.error("Password confirmation doesn't match")
             else:
-                success, message = register_user(DB_PATH, username, fullname, password)
+                success, message = register_user(DB_URL, username, fullname, password)
                 if success:
                     st.success(message)
                     st.session_state.page = "login"
-                    st.experimental_rerun()
+                    st.rerun()
                 else:
                     st.error(message)
     
     if st.button("Already have an account? Login"):
         st.session_state.page = "login"
-        st.experimental_rerun()
+        st.rerun()
 
 def show_home():
     st.title("Speech Quality Evaluation")
@@ -100,7 +109,7 @@ def show_sidebar():
             
             if st.button("Logout"):
                 logout_user()
-                st.experimental_rerun()
+                st.rerun()
             
             return choice
         else:

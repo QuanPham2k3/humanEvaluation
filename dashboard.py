@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
-from config import DB_PATH
+from config import DB_URL
 from database import get_ab_results, get_all_mos_data
 import plotly.express as px
 
@@ -24,7 +24,7 @@ def show_results():
 def show_mos_results_simplified():
     """Display MOS results with side-by-side bars for all metrics and models in one chart"""
     # Get all raw data
-    raw_data = get_all_mos_data(DB_PATH)
+    raw_data = get_all_mos_data(DB_URL)
     
     if not raw_data or len(raw_data) == 0:
         st.info("No MOS evaluation data available")
@@ -127,7 +127,7 @@ def show_mos_results_simplified():
         
 def show_ab_results_simplified():
     """Display A/B test results with simpler visualizations"""
-    ab_data = get_ab_results(DB_PATH)
+    ab_data = get_ab_results(DB_URL)
     if not ab_data:
         st.info("No A/B evaluation data available")
         return

@@ -1,11 +1,7 @@
 import streamlit as st
-from config import DB_PATH, MOS_ATTRIBUTES
-from database import get_rated_ab_samples, add_ab_rating, get_ab_test_sample_pairs
+from config import DB_URL
+from database import get_rated_ab_samples, add_ab_rating, get_ab_test_sample_pairs, get_audio_path, get_all_models
 
-def get_audio_path(url):
-    """Helper function to get the full path for audio files"""
-    import os
-    return os.path.join("static", url)
 
 def show_ab_evaluation():
     """Main function to display A/B evaluation interface"""
@@ -38,13 +34,13 @@ def show_ab_evaluation():
     # Allow selection of model A if appropriate mode
     model_a = None
     if comparison_mode == "Select model A, random model B":
-        all_models = get_all_models(DB_PATH)
+        all_models = get_all_models(DB_URL)
         model_a = st.selectbox("Select model A", options=[m["model_name"] for m in all_models])
     
     # Start button if not started yet
     if not st.session_state.ab_started:
         st.write("Click the start button to get random sample pairs for evaluation")
-        rated_pairs = get_rated_ab_samples(DB_PATH, st.session_state.user_id)
+        rated_pairs = get_rated_ab_samples(DB_URL, st.session_state.user_id)
         
         if rated_pairs:
             st.info(f"You have previously rated {len(rated_pairs)} sample pairs.")
@@ -53,9 +49,9 @@ def show_ab_evaluation():
             st.session_state.ab_started = True
             
             # Get samples excluding already rated ones
-            rated_pairs = get_rated_ab_samples(DB_PATH, st.session_state.user_id)
+            rated_pairs = get_rated_ab_samples(DB_URL, st.session_state.user_id)
             sample_pairs = get_ab_test_sample_pairs(
-                DB_PATH, 
+                DB_URL, 
                 count=5, 
                 exclude_pairs=rated_pairs,
                 model_a=model_a if comparison_mode == "Select model A, random model B" else None
@@ -68,7 +64,7 @@ def show_ab_evaluation():
                 st.session_state.selected_model_a = model_a
             else:
                 st.warning("No unrated sample pairs remaining!")
-            st.experimental_rerun()
+            st.rerun()
         return
     
     # Load or check samples
@@ -83,16 +79,11 @@ def show_ab_evaluation():
     # Show progress and navigation
     show_progress_and_navigation(sample_pairs)
 
-def get_all_models(db_path):
-    """Get all model names from database"""
-    from database import execute_query
-    return execute_query(db_path, "SELECT model_id, model_name FROM models")
-
 def load_sample_pairs(model_a=None):
     """Load sample pairs or initialize if needed"""
     if "ab_samples" not in st.session_state:
-        rated_pairs = get_rated_ab_samples(DB_PATH, st.session_state.user_id)
-        sample_pairs = get_ab_test_sample_pairs(DB_PATH, count=5, exclude_pairs=rated_pairs, model_a=model_a)
+        rated_pairs = get_rated_ab_samples(DB_URL, st.session_state.user_id)
+        sample_pairs = get_ab_test_sample_pairs(DB_URL, count=5, exclude_pairs=rated_pairs, model_a=model_a)
         if sample_pairs:
             st.session_state.ab_samples = sample_pairs
             st.session_state.rated_pairs = set()
@@ -177,7 +168,7 @@ def show_ab_rating_form(pair, pair_id, swap_position):
         # Handle cancellation
         if cancelled:
             clear_current_rating()
-            st.experimental_rerun()
+            st.rerun()
 
 def handle_ab_rating_submission(pair, pair_id, selected, reason, swap_position):
     """Process the AB rating submission"""
@@ -195,7 +186,7 @@ def handle_ab_rating_submission(pair, pair_id, selected, reason, swap_position):
     
     # Save rating
     result_id = add_ab_rating(
-        DB_PATH, 
+        DB_URL, 
         pair['sample_a_id'], 
         pair['sample_b_id'],
         st.session_state.user_id, 
@@ -209,7 +200,7 @@ def handle_ab_rating_submission(pair, pair_id, selected, reason, swap_position):
         # Clear current rating
         clear_current_rating()
         st.success("Rating has been recorded!")
-        st.experimental_rerun()
+        st.rerun()
     else:
         st.error("An error occurred while saving the rating.")
 
@@ -231,7 +222,7 @@ def show_progress_and_navigation(sample_pairs):
     with col1:
         if st.button("Get New Sample Pairs", use_container_width=True):
             reset_evaluation()
-            st.experimental_rerun()
+            st.rerun()
     
     with col2:
         if len(st.session_state.rated_pairs) == len(sample_pairs):

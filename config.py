@@ -1,36 +1,36 @@
+# PostgreSQL connection string
 import os
-from pathlib import Path
+from urllib.parse import urlparse
+import streamlit as st
 
-# Thư mục gốc
-BASE_DIR = Path(__file__).parent.absolute()
+def get_db_url():
+    import streamlit as st
+    if 'postgres' in st.secrets:
+    
+        pg_config = st.secrets["postgres"]
+        
+        # Escape special characters in password
+        password = pg_config.get('password', '').replace('@', '%40').replace('!', '%21')
+        
+        # Tạo URL string
+        return f"postgresql://{pg_config.get('user')}:{password}@{pg_config.get('host')}:{pg_config.get('port')}/{pg_config.get('dbname')}"
+    else:
+        return os.environ.get('DATABASE_URL', 'postgresql://postgres:postgres@localhost:5432/tts_evaluation_db')
+    
+DB_URL = get_db_url() 
+AUDIO_DIR = os.path.join("static", "audio")
 
-# Database
-DB_PATH = os.path.join(BASE_DIR, "data", "tts_eval.db")
-
-# Thư mục audio
-AUDIO_DIR = os.path.join(BASE_DIR, "static", "audio")
-
-# Cài đặt bảo mật
-SECRET_KEY = "your-secret-key-change-in-production"
-SESSION_EXPIRY = 3600  # Thời gian hết hạn session (giây)
-PASSWORD_SALT_LENGTH = 32
-
-# MOS Attributes
+# Thông số đánh giá MOS
 MOS_ATTRIBUTES = [
-    {"id": "naturalness", "label": "Tự nhiên", "description": "Giọng đọc nghe tự nhiên như người thật không?"},
-    {"id": "intelligibility", "label": "Rõ ràng", "description": "Nội dung rõ ràng, dễ hiểu không?"},
-    {"id": "pronunciation", "label": "Phát âm", "description": "Phát âm chính xác không?"},
-    {"id": "prosody", "label": "Ngữ điệu", "description": "Ngữ điệu, nhịp điệu phù hợp không?"},
-    #{"id": "speaker_similarity", "label": "Giống giọng người", "description": "Giống với giọng nói của người gốc không?"},
-    {"id": "overall_rating", "label": "Tổng thể", "description": "Đánh giá tổng thể về chất lượng"}
+    {'id': 'naturalness', 'label': 'Naturalness', 'description': 'How natural does the voice sound?'},
+    {'id': 'intelligibility', 'label': 'Intelligibility', 'description': 'How clear and understandable is the speech?'},
+    {'id': 'pronunciation', 'label': 'Pronunciation', 'description': 'How accurate is the pronunciation?'},
+    {'id': 'prosody', 'label': 'Prosody', 'description': 'How natural is the rhythm, stress, and intonation?'},
+    {'id': 'overall_rating', 'label': 'Overall', 'description': 'Overall quality rating'}
 ]
-
-# A/B Test Attributes (giống MOS attributes)
-AB_TEST_ATTRIBUTES = MOS_ATTRIBUTES
-
-# Audio models
 MODELS = {
     "elevenlab": "ElevenLab",
     "vits": "VITS",
-    "xtts": "XTTS"
+    "xtts": "XTTS",
+    "f5tts": "F5TTS"
 }

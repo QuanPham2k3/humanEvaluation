@@ -1,11 +1,7 @@
 import streamlit as st
-from config import DB_PATH, MOS_ATTRIBUTES
-from database import get_rated_samples, add_mos_rating, get_multiple_random_samples
+from config import DB_URL, MOS_ATTRIBUTES
+from database import get_rated_samples, add_mos_rating, get_multiple_random_samples, get_audio_path
 
-def get_audio_path(url):
-    """Helper function to get the full path for audio files"""
-    import os
-    return os.path.join("static", url)
 
 def show_mos_evaluation():
     """Main function to display MOS evaluation interface"""
@@ -35,7 +31,7 @@ def show_mos_evaluation():
 def handle_start_evaluation():
     """Handle the evaluation start screen"""
     st.write("Click the start button to get random samples for evaluation")
-    rated_samples = get_rated_samples(DB_PATH, st.session_state.user_id)
+    rated_samples = get_rated_samples(DB_URL, st.session_state.user_id)
     
     if rated_samples:
         st.info(f"You have previously rated {len(rated_samples)} samples.")
@@ -44,21 +40,21 @@ def handle_start_evaluation():
         st.session_state.mos_started = True
         
         # Get samples excluding already rated ones
-        rated_samples = get_rated_samples(DB_PATH, st.session_state.user_id)
-        samples = get_multiple_random_samples(DB_PATH, count=10, max_per_model=5, exclude_ids=rated_samples)
+        rated_samples = get_rated_samples(DB_URL, st.session_state.user_id)
+        samples = get_multiple_random_samples(DB_URL, count=10, max_per_model=5, exclude_ids=rated_samples)
         
         if samples:
             st.session_state.mos_samples = samples
             st.session_state.rated_samples = set()
         else:
             st.warning("No unrated samples remaining!")
-        st.experimental_rerun()
+        st.rerun()
 
 def load_samples():
     """Load samples or initialize if needed"""
     if "mos_samples" not in st.session_state:
-        rated_samples = get_rated_samples(DB_PATH, st.session_state.user_id)
-        samples = get_multiple_random_samples(DB_PATH, count=10, max_per_model=5, exclude_ids=rated_samples)
+        rated_samples = get_rated_samples(DB_URL, st.session_state.user_id)
+        samples = get_multiple_random_samples(DB_URL, count=10, max_per_model=5, exclude_ids=rated_samples)
         if samples:
             st.session_state.mos_samples = samples
             st.session_state.rated_samples = set()
@@ -106,9 +102,9 @@ def display_sample(sample, sample_index):
     # Show rating form within an expander
     if st.session_state.get('current_rating_sample_id') == sample_id:
         with st.expander("Rating Form", expanded=True):
-            show_rating_form(sample, sample_id)
+            show_rating_form( sample_id)
 
-def show_rating_form(sample, sample_id):
+def show_rating_form(sample_id):
     """Display and handle the rating form for a sample"""
     with st.form(f"mos_form_{sample_id}"):
         ratings = {}
@@ -132,7 +128,7 @@ def show_rating_form(sample, sample_id):
         # Handle cancellation
         if cancelled:
             clear_current_rating()
-            st.experimental_rerun()
+            st.rerun()
 
 def handle_rating_submission(sample_id, ratings):
     """Process the rating submission"""
@@ -141,7 +137,7 @@ def handle_rating_submission(sample_id, ratings):
     
     # Save rating
     rating_id = add_mos_rating(
-        DB_PATH, sample_id, 
+        DB_URL, sample_id, 
         st.session_state.user_id, ratings
     )
     
@@ -151,7 +147,7 @@ def handle_rating_submission(sample_id, ratings):
         # Clear current rating sample
         clear_current_rating()
         st.success("Rating has been recorded!")
-        st.experimental_rerun()
+        st.rerun()
     else:
         st.error("An error occurred while saving the rating.")
 
@@ -173,7 +169,7 @@ def show_progress_and_navigation(samples):
     with col1:
         if st.button("Get New Samples", use_container_width=True):
             reset_evaluation()
-            st.experimental_rerun()
+            st.rerun()
     
     with col2:
         if len(st.session_state.rated_samples) == len(samples):
